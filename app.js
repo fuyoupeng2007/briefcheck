@@ -1,13 +1,17 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const KEY='briefcheck-draft-v1';
-let lang='zh',report=null;
+const KEY='briefcheck-library-v3',LEGACY='briefcheck-draft-v1';
+let lang='zh',report=null,previous=null;
+const uid=()=>crypto.randomUUID();
+let library={active:uid(),projects:[]};
 const copy={
  zh:{private:'文本留在本机',headline:'先把需求说清楚。<br><span>再开始交付。</span>',subtitle:'把零散的客户需求，变成有来源、可编辑的验收清单。',note:'不替你猜预算。<br>不把建议当约定。<br>每个结论都能回到原文。',inputTitle:'放入原始需求',projectLabel:'项目名称',briefLabel:'客户怎么说？',hint:'支持中文与英文。只使用本地规则，建议需要人工确认。',trySample:'试试样例',sampleWeb:'网站需求',sampleVideo:'视频剪辑',sampleComplete:'详细需求',analyze:'生成验收清单',storage:'草稿自动保存在当前浏览器。共享电脑使用后可清除。',clear:'清除本机草稿',emptyTitle:'让“做好了”有据可依。',emptyText:'填入需求或选一个样例。<br>交付项、待确认问题和范围提醒将在这里出现。',empty1:'01 放入需求',empty2:'02 确认标准',empty3:'03 导出清单',draft:'协商草稿',stale:'原始需求已修改。重新生成后才能导出，旧清单的编辑将重置。',deliverableMetric:'交付项',questionMetric:'待确认字段',riskMetric:'范围提醒',confirmationMetric:'用户已确认',factsTitle:'原文中的关键信息',factsNote:'展示原句，不推测数值',deliverablesTitle:'交付与验收清单',editable:'点击文字可编辑',suggestion:'下面是建议标准。与客户协商后再勾选“已确认”。',questionsTitle:'先问清楚这些',questionsNote:'补上合作的空白',risksTitle:'范围提醒',milestonesTitle:'建议里程碑',milestonesNote:'日期由双方约定',exportNote:'带上原文与确认状态，继续沟通。',exportMd:'导出 Markdown ↓',exportJson:'导出 JSON ↓',print:'打印 / PDF',footer:'更少猜测，更明确的交付。',budget:'预算',deadline:'交付时间',revisions:'修改轮次',acceptance:'验收标准',assets:'素材归属',missing:'待确认',confirm:'已确认',source:'原文',answer:'填写客户答复（可选）',noQuestions:'规则未发现这五项信息缺失，仍请核对原文。',noRisks:'未触发范围提醒。仍请人工核对需求与验收标准。',done:'清单已生成。编辑标准并确认，然后导出。',empty:'先填入需求，或选择一个样例。',tooLong:'需求最多 20,000 字。请缩短后再试。',saved:'已保存到本机。',noStorage:'浏览器无法保存草稿。请及时导出；刷新后编辑会丢失。',cleared:'本机草稿已清除。',sampleLoaded:'演示需求已填入，可以修改后生成。',restored:'已恢复本机草稿。',confirmReset:'重新生成将覆盖当前验收标准和答复，继续吗？',confirmClear:'清除本机草稿和当前编辑？',titlePlaceholder:'例如：咖啡店品牌官网',briefPlaceholder:'粘贴客户的需求描述、聊天记录或项目说明……',defaultTitle:'未命名项目',downloaded:'文件已导出。'},
  en:{private:'Stays on your device',headline:'Agree on the brief.<br><span>Then deliver.</span>',subtitle:'Turn a scattered client brief into an editable, evidence-backed acceptance checklist.',note:'No invented budgets.<br>Suggestions stay suggestions.<br>Every finding links to the brief.',inputTitle:'Add the original brief',projectLabel:'Project name',briefLabel:'What did the client say?',hint:'Supports English and Chinese. Local rules only; review every suggestion.',trySample:'Try a sample',sampleWeb:'Website',sampleVideo:'Video editing',sampleComplete:'Detailed brief',analyze:'Build acceptance checklist',storage:'Drafts are saved in this browser. Clear them after using a shared device.',clear:'Clear local draft',emptyTitle:'Make “done” measurable.',emptyText:'Paste a brief or choose a sample.<br>Deliverables, open questions and scope reminders appear here.',empty1:'01 Add brief',empty2:'02 Agree criteria',empty3:'03 Export',draft:'Discussion draft',stale:'The original brief has changed. Regenerate before exporting. Checklist edits will reset.',deliverableMetric:'Deliverables',questionMetric:'Missing fields',riskMetric:'Scope reminders',confirmationMetric:'User-confirmed',factsTitle:'Details found in the brief',factsNote:'Original wording, no guessed values',deliverablesTitle:'Deliverables & acceptance',editable:'Edit the criteria below',suggestion:'These are suggested criteria. Discuss with the client before checking “Confirmed”.',questionsTitle:'Clarify these first',questionsNote:'Fill the gaps in your agreement',risksTitle:'Scope reminders',milestonesTitle:'Suggested milestones',milestonesNote:'Dates to agree together',exportNote:'Keep the source and confirmation status in the conversation.',exportMd:'Export Markdown ↓',exportJson:'Export JSON ↓',print:'Print / PDF',footer:'Less guessing. Clearer delivery.',budget:'Budget',deadline:'Deadline',revisions:'Revisions',acceptance:'Acceptance',assets:'Asset ownership',missing:'To clarify',confirm:'Confirmed',source:'Source',answer:'Add the client’s answer (optional)',noQuestions:'No missing tracked fields were found. Please still review the brief.',noRisks:'No scope rules were triggered. Human review is still needed.',done:'Checklist ready. Edit criteria, confirm and export.',empty:'Paste a brief or choose a sample first.',tooLong:'The brief is limited to 20,000 characters. Shorten it and try again.',saved:'Saved on this device.',noStorage:'This browser cannot save drafts. Export before refreshing or edits will be lost.',cleared:'Local draft cleared.',sampleLoaded:'Sample brief loaded. You can edit it before generating.',restored:'Local draft restored.',confirmReset:'Regenerate and replace your edited criteria and answers?',confirmClear:'Clear the local draft and current edits?',titlePlaceholder:'e.g. Coffee shop website',briefPlaceholder:'Paste the client’s brief, messages or project description…',defaultTitle:'Untitled project',downloaded:'File exported.'}
 };
 Object.assign(copy.zh,{questionMetric:'未答复问题',optionalTitle:'可选范围',optionalNote:'尚未纳入交付；确认后再添加',addDeliverable:'添加自定义交付项',remove:'移除交付项',customName:'自定义交付项',customEvidence:'用户手动添加；请填写范围与来源。',conflict:'原文说法冲突',clientAnswer:'用户补充答复',adopt:'纳入交付'});
 Object.assign(copy.en,{questionMetric:'Unanswered questions',optionalTitle:'Optional scope',optionalNote:'Not included; discuss before adding',addDeliverable:'Add custom deliverable',remove:'Remove deliverable',customName:'Custom deliverable',customEvidence:'Manually added; describe scope and source.',conflict:'Competing source statements',clientAnswer:'User-provided answer',adopt:'Include in scope'});
+Object.assign(copy.zh,{library:'本机项目',newProject:'新建项目',deleteProject:'删除当前项目',importJson:'导入 JSON',libraryFull:'最多保存 20 个项目。请先导出并删除不用的项目。',invalidImport:'无法导入：请使用 BriefCheck JSON，文件不超过 1 MB。',imported:'已作为新项目导入；原文信息已重新核对。',exportHtml:'导出客户预览 ↓',changes:'本轮需求变化',changeNote:'保留手写标准与答复；原文变化后重新确认',noChanges:'没有规则识别到的字段变化，请对照原文复核。',before:'上一版',after:'这一版',stale:'原文已修改。重新生成会保留可匹配的手写标准和答复，并清除已确认状态。',confirmDelete:'删除当前项目及本机编辑？请先导出需要保留的内容。',clear:'清除全部本机项目',confirmClear:'清除全部本机项目及编辑？',storage:'最多 20 个项目，自动保存到当前浏览器。可用 JSON 备份或迁移。'});
+Object.assign(copy.en,{library:'Local projects',newProject:'New project',deleteProject:'Delete current project',importJson:'Import JSON',libraryFull:'Up to 20 local projects. Export and delete unused projects first.',invalidImport:'Cannot import: use BriefCheck JSON, no larger than 1 MB.',imported:'Imported as a new project; source facts have been rechecked.',exportHtml:'Export client preview ↓',changes:'Changes in this revision',changeNote:'Written criteria and answers retained; changed briefs need reconfirmation',noChanges:'No tracked field changes. Review the original brief as well.',before:'Previous',after:'Current',stale:'The brief changed. Regenerate to retain matching written criteria and answers, and reset confirmation.',confirmDelete:'Delete this local project and its edits? Export anything you need first.',clear:'Clear all local projects',confirmClear:'Clear all local projects and their edits?',storage:'Up to 20 projects, automatically saved in this browser. Use JSON to back up or transfer.'});
 const samples={
  zh:{web:{title:'咖啡店品牌官网',brief:'我们想做一个咖啡店网站，有首页、菜单和预约页面。\n设计要高级一点，参考喜欢的咖啡品牌，手机上也要好看。\n希望尽快上线，可以改到满意为止。\n需要登录和在线支付，最好再加一条品牌宣传视频。'},video:{title:'城市旅行短视频',brief:'需要剪辑 3 条城市旅行视频，每条 30 秒，9:16 竖屏，1080p。\n加中文字幕和背景音乐，要有电影感。\n客户提供原始素材，音乐授权还要商量。\n预算 1500 元，10月15日交付，包含 2 轮修改。'},complete:{title:'工作室作品集网站',brief:'开发一个工作室作品集网站，包含首页、作品列表与联系我们三个页面。\n预算 3000 元，确认范围后付 50%，验收后付余款。\n交付日期 2026-10-20，首版 10月12日，客户两天内提供合并反馈。\n包含 2 轮修改，新增页面另行报价。\n客户提供文案、图片和域名，不需要登录和支付功能。\n验收标准：390px 手机与 1440px 桌面无横向滚动，导航可用，联系邮箱链接正确，交付源文件与运行说明。'}},
  en:{web:{title:'Coffee shop website',brief:'Build a website for a coffee shop with a homepage, menu and booking page.\nThe design should feel premium and look good on mobile.\nLaunch ASAP and revise until satisfied.\nInclude login and payment. A brand video would also be nice.'},video:{title:'City travel videos',brief:'Edit 3 travel videos, each 30 seconds, vertical 9:16, 1080p.\nAdd English captions and background music; make it cinematic.\nClient provides raw footage. Music permissions are TBD.\nBudget $300. Deadline October 15. Include 2 revision rounds.'},complete:{title:'Studio portfolio website',brief:'Build a studio website with a homepage, portfolio and contact page.\nBudget $500, half after scope agreement and half after acceptance.\nDeadline October 20, 2026. First draft October 12, with consolidated client feedback within 2 days.\nInclude 2 revision rounds. Extra pages need a separate quote.\nClient provides copy, images and domain. No login or payment required.\nAcceptance: no horizontal scroll at 390px and 1440px, working navigation and email links, source files and run instructions included.'}}
@@ -15,7 +19,10 @@ const samples={
 function t(key){return copy[lang][key]||key;}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
 function notify(key,error=false){$('status').textContent=t(key);$('status').classList.toggle('error',error);}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({lang,title:$('project-title').value,brief:$('brief').value,report}));return true;}catch{notify('noStorage',true);return false;}}
+function persist(){const data={id:library.active,lang,title:$('project-title').value,brief:$('brief').value,report,previous};const index=library.projects.findIndex(x=>x.id===library.active);if(index<0)library.projects.push(data);else library.projects[index]=data;try{localStorage.setItem(KEY,JSON.stringify(library));updateLibrary();return true;}catch{notify('noStorage',true);return false;}}
+function updateLibrary(){const select=$('project-select');select.replaceChildren();for(const p of library.projects){const option=el('option','',p.title.trim()||t('defaultTitle'));option.value=p.id;select.append(option);}select.value=library.active;}
+function loadProject(project){library.active=project.id;lang=project.lang==='en'?'en':'zh';$('project-title').value=project.title;$('brief').value=project.brief;report=project.report?BriefCheck.restore(project.report,lang):null;previous=project.previous?BriefCheck.restore(project.previous,lang):null;translate();render();updateLibrary();}
+function newProject(){if(library.projects.length>=20){notify('libraryFull',true);return false;}loadProject({id:uid(),lang,title:'',brief:'',report:null,previous:null});persist();return true;}
 function translate(){
  document.documentElement.lang=lang==='en'?'en':'zh-CN';document.body.dataset.lang=lang;
  document.querySelectorAll('[data-i18n]').forEach(n=>{const text=t(n.dataset.i18n);if(['headline','note','emptyText'].includes(n.dataset.i18n))n.innerHTML=text;else n.textContent=text;});
@@ -23,7 +30,7 @@ function translate(){
 }
 function updateFreshness(){
  const stale=!!report&&$('brief').value.trim()!==report.source;
- $('stale').hidden=!stale;for(const id of ['export-md','export-json','print'])$(id).disabled=stale||!report;
+ $('stale').hidden=!stale;for(const id of ['export-md','export-json','export-html','print'])$(id).disabled=stale||!report;
  $('char-count').textContent=$('brief').value.length.toLocaleString('en')+' / 20,000';
 }
 function updateConfirmations(){$('confirmation-count').textContent=report.deliverables.filter(d=>d.confirmed).length+'/'+report.deliverables.length;$('question-count').textContent=report.questions.filter(q=>!q.answer.trim()).length;}
@@ -50,45 +57,47 @@ function render(){
  for(const r of report.risks){const card=el('div','risk');card.append(el('strong','',r.title),el('p','',r.detail),el('p','evidence',t('source')+' · '+r.evidence));risks.append(card);}
  if(!report.risks.length) risks.append(el('p','no-items',t('noRisks')));
  const milestones=$('milestones');milestones.replaceChildren();for(const m of report.milestones){const card=el('div','milestone');card.append(el('strong','',m.name),el('p','',m.detail));milestones.append(card);}
+ const changes=$('changes');changes.replaceChildren();$('revision').hidden=!previous;if(previous){const rows=BriefCheck.compare(previous,report);for(const change of rows){const card=el('div','risk');card.append(el('strong','',t(change.key)),el('p','evidence',t('before')+' · '+(change.before||'—')),el('p','',t('after')+' · '+(change.after||'—')));changes.append(card);}if(!rows.length)changes.append(el('p','no-items',t('noChanges')));}
  updateFreshness();
 }
 function hasEdits(){if(!report)return false;const original=BriefCheck.analyze(report.source,report.lang);return report.deliverables.some(d=>d.confirmed||d.acceptance!==original.deliverables.find(x=>x.id===d.id)?.acceptance)||report.questions.some(q=>q.answer);}
 function generate(){
- try{const next=BriefCheck.analyze($('brief').value,lang);if(hasEdits()&&!window.confirm(t('confirmReset')))return;report=next;render();notify('done');persist();}
+ try{const next=BriefCheck.analyze($('brief').value,lang),old=report;if(old&&old.source!==next.source)previous=JSON.parse(JSON.stringify(old));report=BriefCheck.reconcile(next,old);render();notify('done');persist();}
  catch(error){notify(error.message==='empty'?'empty':'tooLong',true);}
 }
 function download(kind){
  if(!report||$('brief').value.trim()!==report.source)return;
  const title=$('project-title').value.trim()||t('defaultTitle');
- const content=kind==='md'?BriefCheck.toMarkdown(report,title):JSON.stringify({project:title,...report},null,2);
- const blob=new Blob([content],{type:kind==='md'?'text/markdown;charset=utf-8':'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=el('a');
+ const content=kind==='md'?BriefCheck.toMarkdown(report,title):kind==='html'?BriefCheck.toHTML(report,title):JSON.stringify({project:title,...report},null,2);
+ const blob=new Blob([content],{type:kind==='md'?'text/markdown;charset=utf-8':kind==='html'?'text/html;charset=utf-8':'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=el('a');
  a.href=url;a.download=(title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').slice(0,80)||'briefcheck')+'.'+kind;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('downloaded');
 }
 $('analyze').addEventListener('click',generate);
+$('new-project').addEventListener('click',()=>{persist();newProject();});
+$('project-select').addEventListener('change',event=>{const target=event.target.value;persist();const p=library.projects.find(x=>x.id===target);if(p){loadProject(p);persist();}});
+$('delete-project').addEventListener('click',()=>{if(!confirm(t('confirmDelete')))return;library.projects=library.projects.filter(p=>p.id!==library.active);if(library.projects.length)loadProject(library.projects[0]);else newProject();persist();});
+$('import-json').addEventListener('click',()=>$('import-file').click());
+$('import-file').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>1000000)throw new Error('size');const saved=JSON.parse(await file.text()),restored=BriefCheck.restore(saved);if(library.projects.length>=20){notify('libraryFull',true);return;}persist();loadProject({id:uid(),lang:restored.lang,title:typeof saved.project==='string'?saved.project.slice(0,120):t('defaultTitle'),brief:restored.source,report:restored,previous:null});persist();notify('imported');}catch{notify('invalidImport',true);}finally{event.target.value='';}});
 $('add-deliverable').addEventListener('click',()=>{if(!report)return;if(report.deliverables.length>=30)return;report.deliverables.push({id:'manual-'+crypto.randomUUID(),manual:true,name:t('customName'),evidence:t('customEvidence'),acceptance:'',confirmed:false});render();persist();$('deliverables').lastElementChild.querySelector('input').focus();});
 $('brief').addEventListener('input',()=>{updateFreshness();persist();});
 $('project-title').addEventListener('input',()=>{if(report)$('report-title').textContent=$('project-title').value.trim()||t('defaultTitle');persist();});
 document.querySelectorAll('[data-sample]').forEach(btn=>btn.addEventListener('click',()=>{
  if(hasEdits()&&!window.confirm(t('confirmReset')))return;
- const s=samples[lang][btn.dataset.sample];$('project-title').value=s.title;$('brief').value=s.brief;report=null;render();notify('sampleLoaded');persist();
+ const s=samples[lang][btn.dataset.sample];$('project-title').value=s.title;$('brief').value=s.brief;report=null;previous=null;render();notify('sampleLoaded');persist();
 }));
 $('language').addEventListener('click',()=>{
  const old=report,base=old?BriefCheck.analyze(old.source,old.lang):null;lang=lang==='zh'?'en':'zh';translate();
  if(old){const translated=BriefCheck.analyze(old.source,lang),saved=JSON.parse(JSON.stringify(old));for(const d of saved.deliverables){const original=[...base.deliverables,...base.options].find(x=>x.id===d.id),next=[...translated.deliverables,...translated.options].find(x=>x.id===d.id);if(original&&next){if(d.name===original.name)d.name=next.name;if(d.acceptance===original.acceptance){d.acceptance=next.acceptance;d.confirmed=false;}}}report=BriefCheck.restore(saved,lang);}
- render();$('status').textContent='';persist();
+ render();updateLibrary();$('status').textContent='';persist();
 });
-$('clear').addEventListener('click',()=>{if(!window.confirm(t('confirmClear')))return;try{localStorage.removeItem(KEY);}catch{}report=null;$('brief').value='';$('project-title').value='';render();notify('cleared');});
-$('export-md').addEventListener('click',()=>download('md'));$('export-json').addEventListener('click',()=>download('json'));$('print').addEventListener('click',()=>{
+$('clear').addEventListener('click',()=>{if(!window.confirm(t('confirmClear')))return;try{localStorage.removeItem(KEY);localStorage.removeItem(LEGACY);}catch{}library={active:uid(),projects:[]};report=null;previous=null;$('brief').value='';$('project-title').value='';render();updateLibrary();notify('cleared');});
+$('export-md').addEventListener('click',()=>download('md'));$('export-json').addEventListener('click',()=>download('json'));$('export-html').addEventListener('click',()=>download('html'));$('print').addEventListener('click',()=>{
  for(const area of document.querySelectorAll('.deliverable textarea')){area.style.height='auto';area.style.height=area.scrollHeight+'px';}window.print();
 });
 try{
- const saved=JSON.parse(localStorage.getItem(KEY)||'null');
- if(saved&&typeof saved.brief==='string'&&saved.brief.length<=20000){
-  lang=saved.lang==='en'?'en':'zh';$('brief').value=saved.brief;$('project-title').value=String(saved.title||'').slice(0,120);
-  if(saved.report&&typeof saved.report.source==='string'){
-   report=BriefCheck.restore(saved.report,lang);
-  }
-  translate();notify('restored');
- }
+ const stored=JSON.parse(localStorage.getItem(KEY)||'null'),legacy=JSON.parse(localStorage.getItem(LEGACY)||'null');
+ const rows=stored?.projects||(legacy?[{...legacy,id:uid()}]:[]);
+ library.projects=rows.slice(0,20).flatMap(p=>{try{if(typeof p?.brief!=='string'||p.brief.length>20000)return [];return [{id:typeof p.id==='string'?p.id.slice(0,80):uid(),lang:p.lang==='en'?'en':'zh',title:String(p.title||'').slice(0,120),brief:p.brief,report:p.report?BriefCheck.restore(p.report):null,previous:p.previous?BriefCheck.restore(p.previous):null}];}catch{return [];}});
+ if(library.projects.length){loadProject(library.projects.find(p=>p.id===stored?.active)||library.projects[0]);notify('restored');persist();}
 }catch{report=null;}
-translate();render();
+translate();render();updateLibrary();

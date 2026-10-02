@@ -16,4 +16,4 @@ This process deviation is material: the event emphasizes intentional learner par
 
 New application code was written during the published submission period. No unrelated local project code was copied. The official skill pack was consulted, not redistributed. The app uses AI-assisted coding; its runtime analysis uses transparent local rules, not a model. A screen recording shows working product behavior using fictional briefs.
 
-Public release, repository upload, video upload and final Devpost submission await user approval. No external communication, registration or entry submission has been made.
+On 2026-10-02 the user authorized uploading completed work and pursuing additional suitable hackathons, with competitor comparison and at least two further iterations. Versions 2 and 3 implement that instruction. Publishing no longer awaits another approval. Personal eligibility and any required firsthand survey answers remain unestablished. Repository publication does not imply contest entry; that status requires a Devpost receipt. No organizer message has been sent.

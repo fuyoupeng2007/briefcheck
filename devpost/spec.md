@@ -4,6 +4,10 @@ status: draft
 ---
 # BriefCheck — proposed technical specification
 
+## Version 3 addendum (2026-10-02)
+
+This supersedes the original one-draft boundary: 20 local projects in `briefcheck-library-v3`, migrated version-1 drafts; report v3 adds conflicts, evidence, optional and custom scope. `restore` reanalyzes source and bounds edits; `reconcile` preserves matching written criteria/answers with confirmation reset after source changes; `compare` records one previous source revision; `toHTML` escapes text and exports without scripts/assets. JSON imports up to 1 MB create a new project. Nonempty answers reduce unanswered count without rewriting facts. See ITERATIONS.md for comparative evidence.
+
 ## How This Works, In Plain Language
 The browser splits the brief into clauses and checks a small set of documented phrases. It shows matching clauses as evidence, leaves missing information blank, and offers editable acceptance suggestions. The browser saves the current work locally and produces downloadable files. There is no external AI inference service.
 

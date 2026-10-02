@@ -1,5 +1,9 @@
 # Verification evidence
 
+## Version 3 evidence (2026-10-02)
+
+Supersedes version-1 counts below: 18 tests, fixed 12-case benchmark 12/12 (v1 6/12, v2 12/12). Browser verified conflicts, optional/custom scope, reduced unanswered count, project switching/reload, criteria preservation and confirmation reset, revision differences, actual MD/JSON/HTML downloads and JSON import. Client HTML had one local-document request and zero subresources. Desktop 1440/mobile 390 widths showed no overflow. Ignored qa/v3-* files hold fictional exports/screenshots. Date-year and copy-ownership gaps were corrected. Original 70.4-second video below shows version 1 only. Formal contest entry requires a receipt.
+
 Completed locally on 2026-10-02. Original build began 2026-10-01. No live deployment or contest submission is claimed.
 
 ## Core behavior

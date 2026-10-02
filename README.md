@@ -1,59 +1,44 @@
 # BriefCheck
 
-An offline acceptance-checklist workspace for freelancers. Paste an English or Chinese client brief, review evidence-backed findings, edit suggested acceptance criteria, record client answers, and export the result.
+An offline acceptance workspace for freelancers. Turn an English or Chinese client brief into a source-backed checklist, clarify competing terms, retain edits across revisions, and export a portable client document.
 
 ## Try it
 
-Open `index.html` directly in a modern browser. The app has no runtime dependencies, API keys or network calls. For consistent browser storage, use the local server:
+Open `index.html` directly, or run `npm start` and open http://127.0.0.1:4317. Node 20+ recommended. No npm install, API keys, fonts, dependencies or runtime network requests. Browser storage is more consistent with the loopback server than file URLs.
 
-```sh
-npm start
-```
+## Version 3 workflow
 
-Open http://127.0.0.1:4317. Node.js 20+ is recommended. No `npm install` is necessary. `PORT` can override the default port. The server binds to loopback only and exposes five application files, not the repository or draft data.
+1. Choose the Website sample and generate. Samples are fictional.
+2. Review source facts, competing statements, optional scope and unanswered questions.
+3. Edit names and criteria, add custom scope, and record answers. Answers remain distinct from source facts.
+4. Confirm criteria. Editing a name or criterion clears confirmation.
+5. Change the budget in the source and regenerate. Matching written criteria and answers stay; confirmation resets. Compare the two revisions.
+6. Create a second project, switch projects, and refresh to restore work.
+7. Export JSON and import it as a new project. Import reanalyzes source facts and bounds editable fields.
+8. Export Markdown, standalone HTML client preview, or use browser Print / PDF.
 
-## Demo journey
+Source changes block export until regenerated. Up to 20 local projects; JSON import limited to 1 MB. Version-1 drafts migrate automatically. Clear/delete ask for confirmation.
 
-1. Select English or Chinese, then choose the Website sample. Samples are fictitious.
-2. Generate a checklist. Missing budget and deadline remain open questions.
-3. Inspect the source wording under each deliverable and reminder.
-4. Replace a suggested criterion with an observable check, then mark it confirmed.
-5. Add an answer to an open question. Refresh to see the draft restored.
-6. Export Markdown or JSON. Print / PDF uses the browser's own dialog.
+## Two further iterations
 
-Changing the original brief makes the current report stale and disables export until regeneration. Regeneration asks before replacing edited criteria or answers. Editing a confirmed criterion clears its confirmation. Switching languages keeps handwritten edits; translated suggestions must be confirmed again.
+Version 2 added competing budgets/revisions/final deadlines, optional scope, unanswered counts and editable/custom deliverables. Version 3 adds the project library, import, retained criteria, before/after differences and escaped script-free HTML. Visual review also corrected date-year evidence and ordinary English copy ownership.
 
-## What it does
-
-- Extracts source clauses for five fields: budget, deadline, revision rounds, acceptance and asset ownership.
-- Recognizes website/app, video, visual design, workflow and document deliverables; unrecognized work gets a customizable item.
-- Flags subjective descriptions, unbounded revisions, payment, login and API dependencies, and mixed deliverables.
-- Keeps missing data, suggestions and user-confirmed criteria distinct.
-- Provides three suggested milestones without inventing dates or fees.
-- Saves one draft in this browser's `localStorage`, with a clear-draft action.
-- Exports the full original brief, source evidence, edits, answers and confirmation status.
+[Iteration log and competitor comparison](devpost/ITERATIONS.md). The fixed 12-case regression set passed 6/12 on version 1, 12/12 on version 2 and 12/12 on version 3. This small hand-written set is not a real-world accuracy estimate. Eighteen final unit tests cover additional revision, import and export behavior.
 
 ## Honest limits
 
-This is a rule-based tool built with AI assistance, not a language model or an AI negotiation agent. It does not understand arbitrary prose. Recognition covers common phrases in English and Chinese; uncommon dates, negations, contradictory budgets, conditional requests and mixed clauses may be missed or classified incorrectly. Detected details reproduce the first matching source clause, not a reconciled agreement. Open questions count missing tracked fields, not unanswered custom questions. A typed answer does not automatically change a source fact.
+Runtime uses transparent rules, not an LLM. Complex conditions, negation, installments, equivalent dates and mixed clauses may be classified incorrectly. Conflicts are flagged, not resolved; deadline comparison is textual. Suggested milestones have no assigned dates. New-source regeneration can restore previously removed rule-generated items; manually added items remain.
 
-All suggestions require human review. A checkmark records the user's action, not proof that the client agreed. Clear local drafts on shared devices. Private browsing or browser settings can prevent draft storage; use exports as portable copies. Storage on `file://` can vary by browser; local-server use is preferable. No cross-device sync or project import is included.
+Checkmarks record local user actions, not client signatures. No accounts, payments, sync, CRM integration or legal-agreement guarantees. Client HTML includes the full brief and answers: review before sharing. Storage denial, quota, private browsing or clearing browser data can prevent restoration; keep exported backups. The whole library is saved on each edit; large-library typing latency is unmeasured. Only Chromium was tested, with no broad compatibility certification.
 
 ## Verification
 
-```sh
-npm test
-node --check app.js
-node --check core.js
-node --check server.cjs
-```
-
-Uses Node's built-in test runner, no framework installation. See `VERIFICATION.md` for browser evidence and reproducible review steps. There is no configured lint or static type checker.
+Run `npm test`, `npm run benchmark` and `node --check` on app.js, core.js and server.cjs. No installation needed. [VERIFICATION.md](VERIFICATION.md) records actual browser checks. No lint/type checker configured. The optional loopback server serves only five application files.
 
 ## Planning and provenance
 
-Created on 2026-10-01 for consideration in [Build With AI: Basics](https://learn-ai-basics.devpost.com/). `devpost/scope.md`, `prd.md` and `spec.md` were informed by the official [Devpost Learn Skill Pack](https://github.com/challengepost/learn-ai-basics), read before implementation. The user explicitly requested autonomous development followed by review, overriding the curriculum's intermediate interview and approval cadence. Planning documents retain `status: draft`; no learner interview or approval is fabricated. Eligibility, final learner-written submission fields, public repository and public video URL remain to be completed before submission. This is a locally verified candidate, not a submitted entry or a claim of organizer approval.
+New work began 2026-10-01. The [Build With AI: Basics](https://learn-ai-basics.devpost.com/) planning documents use the official [Devpost Learn Skill Pack](https://github.com/challengepost/learn-ai-basics), consulted before implementation. The user requested autonomous creation, then authorized publishing and further iterations. No learner interview, personal reflection or intermediate approval is fabricated; [PROCESS.md](devpost/PROCESS.md) discloses the curriculum deviation.
 
-Code, styles and illustrative briefs were newly written with Codex. No existing project code, stock images, copyrighted music, third-party application code or API services were incorporated. Official skill files are not bundled in this source distribution. See `devpost/PROCESS.md` and `devpost/app-map.html`.
+Codex assisted with all code, design, fictional examples and documentation. Runtime is not model inference. No unrelated existing project code, stock imagery, music or external API service was included. Official skill files were consulted, not redistributed. Contest entry status requires an actual Devpost receipt independently of repository publication.
 
 License: MIT.

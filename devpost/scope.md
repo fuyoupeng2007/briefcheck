@@ -4,6 +4,8 @@ status: draft
 ---
 # BriefCheck — proposed scope
 
+Version 3 scope update, authorized 2026-10-02: optional/conflicting source information, editable/custom scope, unanswered counts, 20 local projects, JSON import, retained edits with reconfirmation, revision comparison and client HTML. This supersedes the original one-draft POC/later boundary below. No cloud account, client signature or model inference added.
+
 Agent-proposed candidate, developed under the user's explicit instruction to complete work before approval. No intermediate learner approval is claimed.
 
 ## The Unique Kernel
