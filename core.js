@@ -8,6 +8,15 @@
   {id:'automation',rx:/自动化|工作流|\bn8n\b|\bautomation\b|\bworkflow\b/i,zh:'自动化流程',en:'Automation workflow',az:'列出输入样例与期望输出；演示正常路径与一次错误路径；明确账号与运行环境归属。',ae:'Define sample inputs and expected outputs; demonstrate success and one failure case; assign account and runtime ownership.'},
   {id:'document',rx:/PPT|文档|报告|简历|presentation|\breport\b|\bdocument\b/i,zh:'文档 / 演示稿',en:'Document / presentation',az:'约定页数、语言、格式和可编辑范围；检查内容、排版与导出效果。',ae:'Agree on pages, language, format and editable content; inspect content, layout and exported files.'}
  ];
+ function requestedFeature(clause,rx){
+  return clause.split(/但是?|不过|然而|\bbut\b|\bhowever\b/i).some(part=>{
+   const match=rx.exec(part);if(!match)return false;
+   const prefix=part.slice(0,match.index),suffix=part.slice(match.index+match[0].length);
+   return !/(?:不需要|不要|无需|不做|不用|without|\bno\b|\bnot\b|do not need|don't need)[^。！？；;]{0,30}$/i.test(prefix)
+    && !/^\s*(?:功能|接口)?\s*(?:不需要|不要|无需|不做|is not required|not needed)/i.test(suffix);
+  });
+ }
+ function optionalFeature(clause){return /最好|可选|如果.*(?:可以|有空|预算)|optional|would.*nice|nice.to.have|if.*budget|maybe|perhaps/i.test(clause);}
  const fields=[
   {id:'budget',rx:/预算|报价|费用|budget|price|cost|fee/i,concrete:/(?:\d[\d,.]*\s*(?:元|块|万|千|usd|cny|rmb|dollars)|[$¥￥€£]\s*\d|(?:usd|cny|rmb)\s*\d)/i,qz:'总预算、付款节点和超出范围后的计费方式分别是什么？',qe:'What is the total budget, payment schedule and pricing for extra scope?'},
   {id:'deadline',rx:/交付|截止|上线|工期|deadline|delivery|due|launch|by\s/i,concrete:/\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}\s*月\s*\d{1,2}\s*[日号]?|\d+\s*(?:天|周|days?|weeks?)|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}/i,qz:'首版和最终交付各是哪一天？何时收到反馈与素材？',qe:'What are the first-draft and final-delivery dates, and when will feedback and assets arrive?'},
@@ -22,28 +31,28 @@
   const clauses=source.split(/\r?\n|[。！？；;]|(?<=[.!?])\s+|[，,](?!\d)/).map(s=>s.trim()).filter(Boolean);
   const say=(z,e)=>enZh(lang,z,e);
   const unknown=/待定|未定|没定|不确定|不清楚|再说|商量|不限|无限|TBD|unknown|unlimited|not decided|not set/i;
-  const facts={}; const questions=[];
+  const facts={},conflicts={},evidence={}; const questions=[];
   for(const f of fields){
-   const evidence=clauses.find(c=>f.rx.test(c)&&f.concrete.test(c)&&!unknown.test(c)&&!/^\s*(?:无|没有|未|no\s)/i.test(c));
-   facts[f.id]=evidence||null;
-   if(!evidence) questions.push({id:f.id,question:say(f.qz,f.qe),answer:''});
+   const candidates=[...new Set(clauses.filter(c=>f.rx.test(c)&&f.concrete.test(c)&&!unknown.test(c)&&!/^\s*(?:无|没有|未|no\s)/i.test(c)))];
+   evidence[f.id]=candidates;
+   const comparable=f.id==='deadline'?candidates.filter(c=>!/首版|初稿|first.draft|feedback|反馈/i.test(c)):candidates;
+   const fingerprints=comparable.map(c=>{
+    if(f.id==='budget')return (c.match(/(?:[$¥￥€£]\s*\d[\d,.]*|\d[\d,.]*\s*(?:元|块|万|千|usd|cny|rmb|dollars)|(?:usd|cny|rmb)\s*\d[\d,.]*)/ig)||[]).join('|').toLowerCase().replace(/\s|,/g,'').replace(/￥|¥|rmb|cny|元|块/g,'CNY');
+    if(f.id==='revisions')return (c.match(/\d+\s*(?:轮|次|rounds?|revisions?)|(?:一|二|两|三|四|五)\s*(?:轮|次)/ig)||[]).join('|').replace(/\s|轮|次|rounds?|revisions?/ig,'').replace(/一/g,'1').replace(/二|两/g,'2').replace(/三/g,'3').replace(/四/g,'4').replace(/五/g,'5');
+    return c.toLowerCase().replace(/\s|[.!:：]/g,'');
+   });
+   const conflicting=['budget','revisions','deadline'].includes(f.id)&&new Set(fingerprints).size>1;
+   if(conflicting)conflicts[f.id]=comparable;
+   facts[f.id]=conflicting?null:(comparable[0]||candidates[0]||null);
+   if(!facts[f.id]) questions.push({id:f.id,question:conflicting?say('原文出现多个'+({budget:'预算',revisions:'修改轮次',deadline:'最终期限'}[f.id])+'说法，最终采用哪一个？','The brief has competing '+f.id+' statements. Which one applies?'):say(f.qz,f.qe),answer:''});
   }
-  const deliverables=rules.flatMap(r=>{
-   const evidence=clauses.find(c=>r.rx.test(c)&&!/(?:不需要|不要|无需|不做|no need|do not need|without)\s*[^。；;]{0,8}$/i.test(c.split(r.rx)[0]));
-   return evidence?[{id:r.id,name:say(r.zh,r.en),evidence,acceptance:say(r.az,r.ae),confirmed:false}]:[];
-  });
+  const deliverables=[],options=[];
+  for(const r of rules){
+   const candidates=clauses.filter(c=>requestedFeature(c,r.rx)),required=candidates.find(c=>!optionalFeature(c)),found=required||candidates[0];
+   if(found)(required?deliverables:options).push({id:r.id,name:say(r.zh,r.en),evidence:found,acceptance:say(r.az,r.ae),confirmed:false});
+  }
   if(!deliverables.length) deliverables.push({id:'custom',name:say('自定义交付项','Custom deliverable'),evidence:clauses[0],acceptance:say('填写实际交付物、数量、格式，以及可重复检查的完成条件。','Define the actual output, count, format and repeatable completion checks.'),confirmed:false});
   const risks=[];
-  function requestedFeature(clause,rx){
-   return clause.split(/但是?|不过|然而|\bbut\b|\bhowever\b/i).some(part=>{
-    const match=rx.exec(part);
-    if(!match)return false;
-    const prefix=part.slice(0,match.index);
-    const suffix=part.slice(match.index+match[0].length);
-    return !/(?:不需要|不要|无需|不做|不用|without|\bno\b|\bnot\b|do not need|don't need)[^。！？；;]{0,30}$/i.test(prefix)
-     && !/^\s*(?:功能|接口)?\s*(?:不需要|不要|无需|不做|is not required|not needed)/i.test(suffix);
-   });
-  }
   function risk(id,rx,zh,en,dz,de,negatable=false){
    const evidence=clauses.find(c=>negatable?requestedFeature(c,rx):rx.test(c));
    if(evidence) risks.push({id,title:say(zh,en),detail:say(dz,de),evidence});
@@ -54,7 +63,7 @@
   risk('auth',/登录|权限|账号系统|login|authentication|user accounts/i,'账号与权限增加交付工作','Accounts and permissions add delivery work','定义角色、找回密码与数据访问范围，并为每个角色准备验收路径。','Define roles, password recovery and data access; prepare acceptance journeys for each role.',true);
   risk('integration',/接口|第三方|API|集成|integration/i,'外部依赖需确认','External dependencies need clarification','确认接口文档、可用账号、调用限制和故障时的交付边界。','Confirm documentation, available accounts, rate limits and delivery boundaries when the dependency fails.');
   if(deliverables.length>1) risks.push({id:'mixed',title:say('多种交付物要分别验收','Multiple outputs need separate acceptance'),detail:say('分别确认数量、负责人、截止时间与修改轮次，避免一个交付物拖住全部验收。','Agree on count, owner, due date and revisions for each output.'),evidence:[...new Set(deliverables.map(d=>d.evidence))].join(' / ')});
-  return {version:1,lang,source,facts,questions,risks,deliverables,milestones:[
+  return {version:2,lang,source,facts,conflicts,evidence,questions,risks,deliverables,options,milestones:[
    {name:say('01 · 确认范围','01 · Agree on scope'),detail:say('答完待确认问题，双方确认交付清单与素材。','Resolve open questions and agree on deliverables and assets.')},
    {name:say('02 · 首版走查','02 · Review first draft'),detail:say('用约定的样例逐项演示，收集一份合并反馈。','Demonstrate agreed examples and collect one consolidated feedback list.')},
    {name:say('03 · 最终验收','03 · Accept delivery'),detail:say('按清单复核，记录结果，交付约定文件与说明。','Check each criterion, record results and hand over agreed files and instructions.')}
@@ -66,8 +75,10 @@
   out+=`## ${s('原文中的信息','Details found in the brief')}\n\n`;
   const labels={budget:s('预算','Budget'),deadline:s('交付时间','Deadline'),revisions:s('修改轮次','Revisions'),acceptance:s('验收','Acceptance'),assets:s('素材','Assets')};
   for(const [key,value] of Object.entries(r.facts)) out+=`- **${labels[key]}**: ${clean(value)||s('待确认','To clarify')}\n`;
+  for(const [key,items] of Object.entries(r.conflicts||{}))out+=`\n**${s('冲突原文','Competing source statements')} (${labels[key]})**\n`+items.map(x=>'> '+clean(x)).join('\n')+'\n';
   out+=`\n## ${s('交付与验收清单','Deliverables and acceptance')}\n\n`;
   for(const d of r.deliverables) out+=`### ${clean(d.name)} — ${d.confirmed?s('已确认','User-confirmed'):s('待确认','To clarify')}\n\n${clean(d.acceptance)}\n\n${s('来源','Source')}: ${clean(d.evidence)}\n\n`;
+  if(r.options?.length)out+=`## ${s('可选范围（未纳入交付）','Optional scope (not included)')}\n\n`+r.options.map(d=>`- ${clean(d.name)}: ${clean(d.evidence)}`).join('\n')+'\n\n';
   out+=`## ${s('待确认问题','Open questions')}\n\n`;
   if(!r.questions.length) out+=s('规则未发现上述字段缺失；仍需人工核对。','No missing tracked fields were found; human review is still needed.')+'\n';
   for(const q of r.questions) out+=`- ${clean(q.question)}\n  ${s('答复','Answer')}: ${clean(q.answer)||s('尚未填写','Not yet provided')}\n`;
@@ -78,5 +89,20 @@
   out+=`\n## ${s('完整原始需求','Full original brief')}\n\n`+r.source.split('\n').map(x=>'> '+x).join('\n')+'\n';
   return out;
  }
- const api={analyze,toMarkdown}; if(typeof module==='object'&&module.exports) module.exports=api; else root.BriefCheck=api;
+ function restore(saved,lang){
+  if(!saved||typeof saved.source!=='string'||!saved.source.trim()||saved.source.length>20000)throw new Error('invalid');
+  const r=analyze(saved.source,lang||saved.lang),allowed=[...r.deliverables,...r.options],ids=new Set();
+  if(Array.isArray(saved.deliverables))r.deliverables=saved.deliverables.slice(0,30).flatMap(d=>{
+   if(!d||typeof d.id!=='string'||ids.has(d.id))return [];
+   const base=allowed.find(x=>x.id===d.id),manual=d.manual===true&&/^manual-[a-zA-Z0-9-]{1,64}$/.test(d.id);
+   if(!base&&!manual)return [];ids.add(d.id);
+   const text=(key,max,fallback='')=>typeof d[key]==='string'?d[key].slice(0,max):fallback;
+   const item={...(base||{}),id:d.id,manual:manual||d.manual===true,name:text('name',120,base?.name),acceptance:text('acceptance',5000,base?.acceptance),evidence:base?.evidence||text('evidence',3000),confirmed:false};
+   item.confirmed=d.confirmed===true&&!!item.acceptance.trim()&&!!item.name.trim();return [item];
+  });
+  r.options=r.options.filter(d=>!ids.has(d.id));
+  for(const q of r.questions){const old=Array.isArray(saved.questions)?saved.questions.find(x=>x?.id===q.id):null;if(typeof old?.answer==='string')q.answer=old.answer.slice(0,3000);}
+  return r;
+ }
+ const api={analyze,toMarkdown,restore}; if(typeof module==='object'&&module.exports) module.exports=api; else root.BriefCheck=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
