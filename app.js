@@ -1,0 +1,92 @@
+'use strict';
+const $=id=>document.getElementById(id);
+const KEY='briefcheck-draft-v1';
+let lang='zh',report=null;
+const copy={
+ zh:{private:'文本留在本机',headline:'先把需求说清楚。<br><span>再开始交付。</span>',subtitle:'把零散的客户需求，变成有来源、可编辑的验收清单。',note:'不替你猜预算。<br>不把建议当约定。<br>每个结论都能回到原文。',inputTitle:'放入原始需求',projectLabel:'项目名称',briefLabel:'客户怎么说？',hint:'支持中文与英文。只使用本地规则，建议需要人工确认。',trySample:'试试样例',sampleWeb:'网站需求',sampleVideo:'视频剪辑',sampleComplete:'详细需求',analyze:'生成验收清单',storage:'草稿自动保存在当前浏览器。共享电脑使用后可清除。',clear:'清除本机草稿',emptyTitle:'让“做好了”有据可依。',emptyText:'填入需求或选一个样例。<br>交付项、待确认问题和范围提醒将在这里出现。',empty1:'01 放入需求',empty2:'02 确认标准',empty3:'03 导出清单',draft:'协商草稿',stale:'原始需求已修改。重新生成后才能导出，旧清单的编辑将重置。',deliverableMetric:'交付项',questionMetric:'待确认字段',riskMetric:'范围提醒',confirmationMetric:'用户已确认',factsTitle:'原文中的关键信息',factsNote:'展示原句，不推测数值',deliverablesTitle:'交付与验收清单',editable:'点击文字可编辑',suggestion:'下面是建议标准。与客户协商后再勾选“已确认”。',questionsTitle:'先问清楚这些',questionsNote:'补上合作的空白',risksTitle:'范围提醒',milestonesTitle:'建议里程碑',milestonesNote:'日期由双方约定',exportNote:'带上原文与确认状态，继续沟通。',exportMd:'导出 Markdown ↓',exportJson:'导出 JSON ↓',print:'打印 / PDF',footer:'更少猜测，更明确的交付。',budget:'预算',deadline:'交付时间',revisions:'修改轮次',acceptance:'验收标准',assets:'素材归属',missing:'待确认',confirm:'已确认',source:'原文',answer:'填写客户答复（可选）',noQuestions:'规则未发现这五项信息缺失，仍请核对原文。',noRisks:'未触发范围提醒。仍请人工核对需求与验收标准。',done:'清单已生成。编辑标准并确认，然后导出。',empty:'先填入需求，或选择一个样例。',tooLong:'需求最多 20,000 字。请缩短后再试。',saved:'已保存到本机。',noStorage:'浏览器无法保存草稿。请及时导出；刷新后编辑会丢失。',cleared:'本机草稿已清除。',sampleLoaded:'演示需求已填入，可以修改后生成。',restored:'已恢复本机草稿。',confirmReset:'重新生成将覆盖当前验收标准和答复，继续吗？',confirmClear:'清除本机草稿和当前编辑？',titlePlaceholder:'例如：咖啡店品牌官网',briefPlaceholder:'粘贴客户的需求描述、聊天记录或项目说明……',defaultTitle:'未命名项目',downloaded:'文件已导出。'},
+ en:{private:'Stays on your device',headline:'Agree on the brief.<br><span>Then deliver.</span>',subtitle:'Turn a scattered client brief into an editable, evidence-backed acceptance checklist.',note:'No invented budgets.<br>Suggestions stay suggestions.<br>Every finding links to the brief.',inputTitle:'Add the original brief',projectLabel:'Project name',briefLabel:'What did the client say?',hint:'Supports English and Chinese. Local rules only; review every suggestion.',trySample:'Try a sample',sampleWeb:'Website',sampleVideo:'Video editing',sampleComplete:'Detailed brief',analyze:'Build acceptance checklist',storage:'Drafts are saved in this browser. Clear them after using a shared device.',clear:'Clear local draft',emptyTitle:'Make “done” measurable.',emptyText:'Paste a brief or choose a sample.<br>Deliverables, open questions and scope reminders appear here.',empty1:'01 Add brief',empty2:'02 Agree criteria',empty3:'03 Export',draft:'Discussion draft',stale:'The original brief has changed. Regenerate before exporting. Checklist edits will reset.',deliverableMetric:'Deliverables',questionMetric:'Missing fields',riskMetric:'Scope reminders',confirmationMetric:'User-confirmed',factsTitle:'Details found in the brief',factsNote:'Original wording, no guessed values',deliverablesTitle:'Deliverables & acceptance',editable:'Edit the criteria below',suggestion:'These are suggested criteria. Discuss with the client before checking “Confirmed”.',questionsTitle:'Clarify these first',questionsNote:'Fill the gaps in your agreement',risksTitle:'Scope reminders',milestonesTitle:'Suggested milestones',milestonesNote:'Dates to agree together',exportNote:'Keep the source and confirmation status in the conversation.',exportMd:'Export Markdown ↓',exportJson:'Export JSON ↓',print:'Print / PDF',footer:'Less guessing. Clearer delivery.',budget:'Budget',deadline:'Deadline',revisions:'Revisions',acceptance:'Acceptance',assets:'Asset ownership',missing:'To clarify',confirm:'Confirmed',source:'Source',answer:'Add the client’s answer (optional)',noQuestions:'No missing tracked fields were found. Please still review the brief.',noRisks:'No scope rules were triggered. Human review is still needed.',done:'Checklist ready. Edit criteria, confirm and export.',empty:'Paste a brief or choose a sample first.',tooLong:'The brief is limited to 20,000 characters. Shorten it and try again.',saved:'Saved on this device.',noStorage:'This browser cannot save drafts. Export before refreshing or edits will be lost.',cleared:'Local draft cleared.',sampleLoaded:'Sample brief loaded. You can edit it before generating.',restored:'Local draft restored.',confirmReset:'Regenerate and replace your edited criteria and answers?',confirmClear:'Clear the local draft and current edits?',titlePlaceholder:'e.g. Coffee shop website',briefPlaceholder:'Paste the client’s brief, messages or project description…',defaultTitle:'Untitled project',downloaded:'File exported.'}
+};
+const samples={
+ zh:{web:{title:'咖啡店品牌官网',brief:'我们想做一个咖啡店网站，有首页、菜单和预约页面。\n设计要高级一点，参考喜欢的咖啡品牌，手机上也要好看。\n希望尽快上线，可以改到满意为止。\n需要登录和在线支付，最好再加一条品牌宣传视频。'},video:{title:'城市旅行短视频',brief:'需要剪辑 3 条城市旅行视频，每条 30 秒，9:16 竖屏，1080p。\n加中文字幕和背景音乐，要有电影感。\n客户提供原始素材，音乐授权还要商量。\n预算 1500 元，10月15日交付，包含 2 轮修改。'},complete:{title:'工作室作品集网站',brief:'开发一个工作室作品集网站，包含首页、作品列表与联系我们三个页面。\n预算 3000 元，确认范围后付 50%，验收后付余款。\n交付日期 2026-10-20，首版 10月12日，客户两天内提供合并反馈。\n包含 2 轮修改，新增页面另行报价。\n客户提供文案、图片和域名，不需要登录和支付功能。\n验收标准：390px 手机与 1440px 桌面无横向滚动，导航可用，联系邮箱链接正确，交付源文件与运行说明。'}},
+ en:{web:{title:'Coffee shop website',brief:'Build a website for a coffee shop with a homepage, menu and booking page.\nThe design should feel premium and look good on mobile.\nLaunch ASAP and revise until satisfied.\nInclude login and payment. A brand video would also be nice.'},video:{title:'City travel videos',brief:'Edit 3 travel videos, each 30 seconds, vertical 9:16, 1080p.\nAdd English captions and background music; make it cinematic.\nClient provides raw footage. Music permissions are TBD.\nBudget $300. Deadline October 15. Include 2 revision rounds.'},complete:{title:'Studio portfolio website',brief:'Build a studio website with a homepage, portfolio and contact page.\nBudget $500, half after scope agreement and half after acceptance.\nDeadline October 20, 2026. First draft October 12, with consolidated client feedback within 2 days.\nInclude 2 revision rounds. Extra pages need a separate quote.\nClient provides copy, images and domain. No login or payment required.\nAcceptance: no horizontal scroll at 390px and 1440px, working navigation and email links, source files and run instructions included.'}}
+};
+function t(key){return copy[lang][key]||key;}
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+function notify(key,error=false){$('status').textContent=t(key);$('status').classList.toggle('error',error);}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({lang,title:$('project-title').value,brief:$('brief').value,report}));return true;}catch{notify('noStorage',true);return false;}}
+function translate(){
+ document.documentElement.lang=lang==='en'?'en':'zh-CN';document.body.dataset.lang=lang;
+ document.querySelectorAll('[data-i18n]').forEach(n=>{const text=t(n.dataset.i18n);if(['headline','note','emptyText'].includes(n.dataset.i18n))n.innerHTML=text;else n.textContent=text;});
+ $('language').textContent=lang==='zh'?'English':'中文';$('project-title').placeholder=t('titlePlaceholder');$('brief').placeholder=t('briefPlaceholder');
+}
+function updateFreshness(){
+ const stale=!!report&&$('brief').value.trim()!==report.source;
+ $('stale').hidden=!stale;for(const id of ['export-md','export-json','print'])$(id).disabled=stale||!report;
+ $('char-count').textContent=$('brief').value.length.toLocaleString('en')+' / 20,000';
+}
+function updateConfirmations(){$('confirmation-count').textContent=report.deliverables.filter(d=>d.confirmed).length+'/'+report.deliverables.length;}
+function render(){
+ $('empty').hidden=!!report;$('report').hidden=!report;if(!report){updateFreshness();return;}
+ $('report-title').textContent=$('project-title').value.trim()||t('defaultTitle');
+ $('deliverable-count').textContent=report.deliverables.length;$('question-count').textContent=report.questions.length;$('risk-count').textContent=report.risks.length;updateConfirmations();
+ const facts=$('facts');facts.replaceChildren();
+ for(const [key,value] of Object.entries(report.facts)){const card=el('div','fact');card.append(el('span','fact-label',t(key)),el('p',value?'':'missing',value||t('missing')));facts.append(card);}
+ const delivery=$('deliverables');delivery.replaceChildren();
+ for(const d of report.deliverables){
+  const card=el('div','deliverable'),head=el('div','delivery-head'),label=el('label','confirm-label');
+  const checkbox=el('input');checkbox.type='checkbox';checkbox.checked=d.confirmed;checkbox.setAttribute('aria-label',t('confirm')+' '+d.name);
+  checkbox.addEventListener('change',()=>{d.confirmed=checkbox.checked;updateConfirmations();persist();});label.append(checkbox,document.createTextNode(t('confirm')));head.append(el('strong','',d.name),label);
+  const area=el('textarea');area.value=d.acceptance;area.rows=3;area.maxLength=5000;area.setAttribute('aria-label',d.name+' '+t('acceptance'));
+  area.addEventListener('input',()=>{d.acceptance=area.value;d.confirmed=false;checkbox.checked=false;updateConfirmations();persist();});
+  card.append(head,area,el('p','evidence',t('source')+' · '+d.evidence));delivery.append(card);
+ }
+ const questions=$('questions');questions.replaceChildren();
+ report.questions.forEach((q,i)=>{const card=el('div','question'),p=el('p');p.append(el('span','q-number',String(i+1).padStart(2,'0')),document.createTextNode(q.question));const input=el('input');input.value=q.answer;input.maxLength=3000;input.placeholder=t('answer');input.setAttribute('aria-label',q.question);input.addEventListener('input',()=>{q.answer=input.value;persist();});card.append(p,input);questions.append(card);});
+ if(!report.questions.length) questions.append(el('p','no-items',t('noQuestions')));
+ const risks=$('risks');risks.replaceChildren();
+ for(const r of report.risks){const card=el('div','risk');card.append(el('strong','',r.title),el('p','',r.detail),el('p','evidence',t('source')+' · '+r.evidence));risks.append(card);}
+ if(!report.risks.length) risks.append(el('p','no-items',t('noRisks')));
+ const milestones=$('milestones');milestones.replaceChildren();for(const m of report.milestones){const card=el('div','milestone');card.append(el('strong','',m.name),el('p','',m.detail));milestones.append(card);}
+ updateFreshness();
+}
+function hasEdits(){if(!report)return false;const original=BriefCheck.analyze(report.source,report.lang);return report.deliverables.some(d=>d.confirmed||d.acceptance!==original.deliverables.find(x=>x.id===d.id)?.acceptance)||report.questions.some(q=>q.answer);}
+function generate(){
+ try{const next=BriefCheck.analyze($('brief').value,lang);if(hasEdits()&&!window.confirm(t('confirmReset')))return;report=next;render();notify('done');persist();}
+ catch(error){notify(error.message==='empty'?'empty':'tooLong',true);}
+}
+function download(kind){
+ if(!report||$('brief').value.trim()!==report.source)return;
+ const title=$('project-title').value.trim()||t('defaultTitle');
+ const content=kind==='md'?BriefCheck.toMarkdown(report,title):JSON.stringify({project:title,...report},null,2);
+ const blob=new Blob([content],{type:kind==='md'?'text/markdown;charset=utf-8':'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=el('a');
+ a.href=url;a.download=(title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').slice(0,80)||'briefcheck')+'.'+kind;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('downloaded');
+}
+$('analyze').addEventListener('click',generate);
+$('brief').addEventListener('input',()=>{updateFreshness();persist();});
+$('project-title').addEventListener('input',()=>{if(report)$('report-title').textContent=$('project-title').value.trim()||t('defaultTitle');persist();});
+document.querySelectorAll('[data-sample]').forEach(btn=>btn.addEventListener('click',()=>{
+ if(hasEdits()&&!window.confirm(t('confirmReset')))return;
+ const s=samples[lang][btn.dataset.sample];$('project-title').value=s.title;$('brief').value=s.brief;report=null;render();notify('sampleLoaded');persist();
+}));
+$('language').addEventListener('click',()=>{
+ const old=report,base=old?BriefCheck.analyze(old.source,old.lang):null;lang=lang==='zh'?'en':'zh';translate();
+ if(old){report=BriefCheck.analyze(old.source,lang);for(const d of report.deliverables){const prev=old.deliverables.find(x=>x.id===d.id),original=base.deliverables.find(x=>x.id===d.id);if(prev){if(prev.acceptance!==original?.acceptance)d.acceptance=prev.acceptance;d.confirmed=prev.confirmed&&d.acceptance===prev.acceptance;}}for(const q of report.questions)q.answer=old.questions.find(x=>x.id===q.id)?.answer||'';}
+ render();$('status').textContent='';persist();
+});
+$('clear').addEventListener('click',()=>{if(!window.confirm(t('confirmClear')))return;try{localStorage.removeItem(KEY);}catch{}report=null;$('brief').value='';$('project-title').value='';render();notify('cleared');});
+$('export-md').addEventListener('click',()=>download('md'));$('export-json').addEventListener('click',()=>download('json'));$('print').addEventListener('click',()=>{
+ for(const area of document.querySelectorAll('.deliverable textarea')){area.style.height='auto';area.style.height=area.scrollHeight+'px';}window.print();
+});
+try{
+ const saved=JSON.parse(localStorage.getItem(KEY)||'null');
+ if(saved&&typeof saved.brief==='string'&&saved.brief.length<=20000){
+  lang=saved.lang==='en'?'en':'zh';$('brief').value=saved.brief;$('project-title').value=String(saved.title||'').slice(0,120);
+  if(saved.report&&typeof saved.report.source==='string'){
+   report=BriefCheck.analyze(saved.report.source,lang);
+   for(const d of report.deliverables){const old=Array.isArray(saved.report.deliverables)?saved.report.deliverables.find(x=>x.id===d.id):null;if(old){if(typeof old.acceptance==='string')d.acceptance=old.acceptance.slice(0,5000);d.confirmed=old.confirmed===true;}}
+   for(const q of report.questions){const old=Array.isArray(saved.report.questions)?saved.report.questions.find(x=>x.id===q.id):null;if(old&&typeof old.answer==='string')q.answer=old.answer.slice(0,3000);}
+  }
+  translate();notify('restored');
+ }
+}catch{report=null;}
+translate();render();
